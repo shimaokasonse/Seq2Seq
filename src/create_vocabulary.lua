@@ -1,5 +1,5 @@
 
-function create_encoder_decoder(file_name, column_num, in_freq,)
+function create_encoder_decoder(file_name, column_num, min_freq)
 
     ---- Processing File
     local f = io.open(file_name)
