@@ -2,7 +2,7 @@ require 'torch'
 require 'nn'
 require 'nngraph'
 require 'optim'
-local CharLMMinibatchLoader = require 'data.CharLMMinibatchLoader'
+local BatchLoader = require 'BatchLoader'
 local LSTM = require 'LSTM'             -- LSTM timestep and utilities
 require 'Embedding'                     -- class name is Embedding (not namespaced)
 local model_utils=require 'model_utils'
@@ -34,7 +34,7 @@ opt.savefile = cmd:string(opt.savefile, opt,
     {save_every=true, print_every=true, savefile=true, vocabfile=true, datafile=true})
     .. '.t7'
 
-local loader = CharLMMinibatchLoader.create(
+local loader = BatchLoader.create(
         opt.datafile, opt.vocabfile, opt.batch_size, opt.seq_length)
 local vocab_size = loader.vocab_size  -- the number of distinct characters
 

@@ -43,5 +43,51 @@ function create_encoder_decoder(file_name, column_num, min_freq)
     end
 
     return encoder, decoder
-
 end
+
+
+function create_dataset_encoder_decoder(file_name,in_min_freq,out_min_freq)
+  local in_column_number = 1
+  local out_column_number = 2
+  local in_encoder, in_decoder = create_encoder_decoder(file_name,in_column_number,in_min_freq)
+  local out_encoder, out_decoder = create_encoder_decoder(file_name,out_column_number,out_min_freq)
+  local dataset_encoder_decoder = {}
+  dataset_encoder_decoder["in_encoder"] = in_encoder
+  dataset_encoder_decoder["in_decoder"] = in_decoder
+  dataset_encoder_decoder["out_encoder"] = out_encoder
+  dataset_encoder_decoder["out_decoder"] = out_decoder
+  return dataset_encoder_decoder
+end
+
+
+function create_dataset(file_name,dataset_encoder_decoder)
+  in_column_number = 1
+  out_column_number = 2
+  in_encoder = dataset_encoder_decoder["in_encoder"]
+  out_encoder = dataset_encoder_decoder["out_encoder"]
+  local f = io.open(file_name)
+  local X = {}
+  local Y = {}
+  for line in f:lines() do
+    local temp = {}
+    for w in line:gmatch("%S+") do table.insert(temp, w) end
+    local input = temp[in_column_number]
+    local output = temp[out_column_number]
+    table.insert(X,in_encoder:encode(input))
+    table.insert(Y,out_encoder:encode(output))
+  end
+  X = torch.Tensor(X)
+  Y = torch.Tensor(Y)
+  dataset = {}
+  dataset["X"] = X
+  dataset["Y"] = Y
+  return dataset
+end
+
+
+---- Main --------
+local file_name = "../data/sample_text.txt"
+local dataset_encoder_decoder = create_dataset_encoder_decoder(file_name,0,0)
+local dataset = create_dataset(file_name,dataset_encoder_decoder)
+torch.save("../data/dataset_encoder_decoder.t7", dataset_encoder_decoder)
+torch.save("../data/dataset.t7", dataset)
