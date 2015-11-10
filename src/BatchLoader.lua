@@ -6,13 +6,14 @@ require 'math'
 local BatchLoader = {}
 BatchLoader.__index = BatchLoader
 
-function BatchLoader.create(dataset, batch_size, seq_length)
+function BatchLoader.create(dataset_name,dataset_encoder_decoder_name, batch_size, seq_length)
     local self = {}
     setmetatable(self, BatchLoader)
 
     -- construct a tensor with all the data
     print('loading data files...')
-    local dataset = torch.load(dataset)
+    local dataset_encoder_decoder = torch.load(dataset_encoder_decoder_name)
+    local dataset = torch.load(dataset_name)
     local X = dataset.X
     local Y = dataset.Y
     -- input and output sequences sould be same length
@@ -28,8 +29,8 @@ function BatchLoader.create(dataset, batch_size, seq_length)
                     * math.floor(len / (batch_size * seq_length)))
     end
 
-    print(X)
-    print(Y)
+    self.in_size = dataset_encoder_decoder["in_size"]
+    self.out_size = dataset_encoder_decoder["out_size"]
     self.x_batches = X:view(batch_size, -1):split(seq_length, 2)  -- #rows = #batches
     self.nbatches = #self.x_batches
     self.y_batches = Y:view(batch_size, -1):split(seq_length, 2)  -- #rows = #batches

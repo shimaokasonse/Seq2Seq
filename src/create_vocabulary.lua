@@ -27,6 +27,7 @@ function create_encoder_decoder(file_name, column_num, min_freq)
             id = id + 1
         end
     end
+    local size = id
 
     ---- Encoder's :encode method
     function encoder:encode(word)
@@ -42,16 +43,18 @@ function create_encoder_decoder(file_name, column_num, min_freq)
         if word then return word else return "$UNKNOWN$" end
     end
 
-    return encoder, decoder
+    return encoder, decoder, size
 end
 
 
 function create_dataset_encoder_decoder(file_name,in_min_freq,out_min_freq)
   local in_column_number = 1
   local out_column_number = 2
-  local in_encoder, in_decoder = create_encoder_decoder(file_name,in_column_number,in_min_freq)
-  local out_encoder, out_decoder = create_encoder_decoder(file_name,out_column_number,out_min_freq)
+  local in_encoder, in_decoder, in_size = create_encoder_decoder(file_name,in_column_number,in_min_freq)
+  local out_encoder, out_decoder, out_size = create_encoder_decoder(file_name,out_column_number,out_min_freq)
   local dataset_encoder_decoder = {}
+  dataset_encoder_decoder["in_size"] = in_size
+  dataset_encoder_decoder["out_size"] = out_size
   dataset_encoder_decoder["in_encoder"] = in_encoder
   dataset_encoder_decoder["in_decoder"] = in_decoder
   dataset_encoder_decoder["out_encoder"] = out_encoder
@@ -60,34 +63,43 @@ function create_dataset_encoder_decoder(file_name,in_min_freq,out_min_freq)
 end
 
 
+
 function create_dataset(file_name,dataset_encoder_decoder)
-  in_column_number = 1
-  out_column_number = 2
-  in_encoder = dataset_encoder_decoder["in_encoder"]
-  out_encoder = dataset_encoder_decoder["out_encoder"]
+  local in_column_number = 1
+  local out_column_number = 2
+  local in_encoder = dataset_encoder_decoder["in_encoder"]
+  local out_encoder = dataset_encoder_decoder["out_encoder"]
   local f = io.open(file_name)
-  local X = {}
-  local Y = {}
+  local dataset = {}
+  local sequence = {}
   for line in f:lines() do
     local temp = {}
     for w in line:gmatch("%S+") do table.insert(temp, w) end
     local input = temp[in_column_number]
     local output = temp[out_column_number]
-    table.insert(X,in_encoder:encode(input))
-    table.insert(Y,out_encoder:encode(output))
+    if not input and sequence ~= {} then
+      table.insert(dataset, torch.Tensor(sequence))
+      sequence = {}
+    end
+    if input then
+      table.insert(sequence, {in_encoder:encode(input), out_encoder:encode(output)})
+    end
   end
-  X = torch.Tensor(X)
-  Y = torch.Tensor(Y)
-  dataset = {}
-  dataset["X"] = X
-  dataset["Y"] = Y
+  table.sort(dataset,
+    function (a,b)
+      return (a:size(1) > b:size(1))
+    end
+    )
   return dataset
 end
 
 
 ---- Main --------
-local file_name = "../data/sample_text.txt"
+local file_name = "../data/train.txt"
 local dataset_encoder_decoder = create_dataset_encoder_decoder(file_name,0,0)
 local dataset = create_dataset(file_name,dataset_encoder_decoder)
 torch.save("../data/dataset_encoder_decoder.t7", dataset_encoder_decoder)
 torch.save("../data/dataset.t7", dataset)
+for i=1,#dataset do
+  print(dataset[i])
+end
