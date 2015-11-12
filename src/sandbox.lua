@@ -9,11 +9,10 @@ local BatchLoader = require 'BatchLoader'
 local LSTM = require "LSTM"
 
 local rnn_size = 50
-local seq_length = 4
-local batch_size = 5
 local max_epochs = 5000
-loader = BatchLoader.create("../data/dataset.t7","../data/dataset_encoder_decoder.t7",batch_size,seq_length)
-
+loader = BatchLoader.create("../data/dataset.t7","../data/dataset_encoder_decoder.t7")
+local seq_length = loader.seq_length
+local batch_size = loader.batch_size
 
 local protos = {}
 protos.embed = Embedding(loader.in_size, rnn_size)
@@ -96,7 +95,7 @@ end
 -- optimization stuff
 local losses = {}
 local optim_state = {learningRate = 1e-1}
-local iterations = max_epochs * loader.nbatches
+local iterations = max_epochs * loader.size
 print(loader.nbatches)
 for i = 1, iterations do
     local _, loss = optim.adagrad(feval, params, optim_state)

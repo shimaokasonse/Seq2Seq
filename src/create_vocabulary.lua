@@ -91,10 +91,9 @@ function create_dataset(file_name,dataset_encoder_decoder,batch_size)
       return (#a > #b)
     end
     )
-
+  local max_length = #dataset[1]  -- Because dataset is sorted by sequence length
     ---- for each batch compute maxlength, for each sample in the batch do if length < maxlength then padd
   local function edit_batch(batch)
-    local max_length = #batch[1]  -- Because dataset is sorted by sequence length
     for i = 1, #batch do
       sequence = batch[i]
       if #sequence < max_length then
@@ -129,6 +128,7 @@ end
 local file_name = "../data/train.txt"
 local dataset_encoder_decoder = create_dataset_encoder_decoder(file_name,0,0)
 local dataset = create_dataset(file_name,dataset_encoder_decoder,100)
-print(dataset[1][{{},{},2}])
+print(dataset[1]:size())
+print(dataset[40])
 torch.save("../data/dataset_encoder_decoder.t7", dataset_encoder_decoder)
 torch.save("../data/dataset.t7", dataset)
