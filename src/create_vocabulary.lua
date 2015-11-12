@@ -17,9 +17,9 @@ function create_encoder_decoder(file_name, column_num, min_freq)
     f:close()
 
     ---- Creating Encoder and Decoder
-    local id = 2 --- id 1 is for $UNKNOWN$.
-    local encoder = {}
-    local decoder = {}
+    local id = 3 --- id 1 is for $UNKNOWN$, id 2 in for $PAD$
+    local encoder = {["$PAD$"]=2}
+    local decoder = {[2]="$PAD$"}
     for word,freq in pairs(vocabulary) do
         if freq > min_freq then
             encoder[word] = id
@@ -35,7 +35,7 @@ function create_encoder_decoder(file_name, column_num, min_freq)
         --- word that is not in vocabulary is treated as $UNKNOWN$.
         if id then return id else return 1 end
     end
-
+    print(encoder["$PAD$"])
     ---- Decoder's :decode method
     function decoder:decode(id)
         local word = decoder[id]
@@ -64,7 +64,7 @@ end
 
 
 
-function create_dataset(file_name,dataset_encoder_decoder)
+function create_dataset(file_name,dataset_encoder_decoder,batch_size)
   local in_column_number = 1
   local out_column_number = 2
   local in_encoder = dataset_encoder_decoder["in_encoder"]
@@ -78,28 +78,57 @@ function create_dataset(file_name,dataset_encoder_decoder)
     local input = temp[in_column_number]
     local output = temp[out_column_number]
     if not input and sequence ~= {} then
-      table.insert(dataset, torch.Tensor(sequence))
+      table.insert(dataset, sequence)
       sequence = {}
     end
     if input then
       table.insert(sequence, {in_encoder:encode(input), out_encoder:encode(output)})
     end
   end
+
   table.sort(dataset,
     function (a,b)
-      return (a:size(1) > b:size(1))
+      return (#a > #b)
     end
     )
-  return dataset
+
+    ---- for each batch compute maxlength, for each sample in the batch do if length < maxlength then padd
+  local function edit_batch(batch)
+    local max_length = #batch[1]  -- Because dataset is sorted by sequence length
+    for i = 1, #batch do
+      sequence = batch[i]
+      if #sequence < max_length then
+        for j = #sequence + 1, max_length do
+          table.insert(sequence,{in_encoder:encode("$PAD$"),out_encoder:encode("$PAD$")})
+        end
+      assert(#sequence == max_length)
+      end
+    end
+  end
+
+  local new_dataset = {}
+  local i = 1
+  while true do
+    batch = {}
+    for j = 1, batch_size do
+      sequence = dataset[i]
+      if not sequence then break end
+      table.insert(batch, sequence)
+      i = i + 1
+    end
+    if not sequence then break end
+    edit_batch(batch)
+    new_batch = torch.Tensor(batch):squeeze()
+    table.insert(new_dataset,new_batch)
+  end
+  return new_dataset
 end
 
 
 ---- Main --------
 local file_name = "../data/train.txt"
 local dataset_encoder_decoder = create_dataset_encoder_decoder(file_name,0,0)
-local dataset = create_dataset(file_name,dataset_encoder_decoder)
+local dataset = create_dataset(file_name,dataset_encoder_decoder,100)
+print(dataset[1][{{},{},2}])
 torch.save("../data/dataset_encoder_decoder.t7", dataset_encoder_decoder)
 torch.save("../data/dataset.t7", dataset)
-for i=1,#dataset do
-  print(dataset[i])
-end
