@@ -127,8 +127,8 @@ end
 ---- Main --------
 local file_name = "../data/train.txt"
 local dataset_encoder_decoder = create_dataset_encoder_decoder(file_name,0,0)
-local dataset = create_dataset(file_name,dataset_encoder_decoder,100)
-print(dataset[1]:size())
-print(dataset[40])
+local dataset = create_dataset(file_name,dataset_encoder_decoder,1000)
+--print(dataset[1]:size())
+--print(dataset[40])
 torch.save("../data/dataset_encoder_decoder.t7", dataset_encoder_decoder)
 torch.save("../data/dataset.t7", dataset)

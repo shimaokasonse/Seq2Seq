@@ -9,8 +9,8 @@ local BatchLoader = require 'BatchLoader'
 local LSTM = require "LSTM"
 
 local rnn_size = 50
-local max_epochs = 5000
-loader = BatchLoader.create("../data/dataset.t7","../data/dataset_encoder_decoder.t7")
+local max_epochs = 5
+local loader = BatchLoader.create("../data/dataset.t7","../data/dataset_encoder_decoder.t7")
 local seq_length = loader.seq_length
 local batch_size = loader.batch_size
 
@@ -96,10 +96,11 @@ end
 local losses = {}
 local optim_state = {learningRate = 1e-1}
 local iterations = max_epochs * loader.size
-print(loader.nbatches)
 for i = 1, iterations do
     local _, loss = optim.adagrad(feval, params, optim_state)
     print(loss[1])
     losses[#losses + 1] = loss[1]
-
 end
+
+
+torch.save("../data/model.t7",protos)
